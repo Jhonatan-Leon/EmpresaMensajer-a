@@ -1,0 +1,19 @@
+defmodule Reportes do
+  @moduledoc """
+    Módulo encargado de generar los reportes del sistema.
+    Incluye: Reporte de rendimiento por repartidor, por zona, reportes financieros y de bonificaciones
+
+    COSAS A HACER AQUI
+
+    - FUNCION QUE GENERE TODOS LOS REPORTES
+    - REPORTE DE SERVICIOS RECHAZADO
+    - REPORTE DE KM Y DENSIDAD POR ZONA
+    - KM POR DIA Y META DE LA EMPRESA SOBRE EXPLOTADORA}
+    - REPORTE DE LA LIQUIDACION ORDENADA DE MAYOR A MENOR
+    - REPORTE DEL MVP CON MAS KILOMETROS AL DIA, EL RAPPI MASTER BASICAMENTE
+    - REPORTE AL MAS PUNTAL
+    - REPORTE DE TOTALES GLOBALES
+    - REPORTE DE LOS REPARTIDORES CON PRESENCIA EN LAS ZONAS
+    Y YA, A MIMIR, MAÑANA LA ROMPO
+  """
+end
