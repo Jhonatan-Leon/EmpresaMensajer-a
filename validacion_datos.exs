@@ -64,10 +64,10 @@ defmodule Validacion do
 
   defp dia_servicio(servicios) do
       if servicios.dia in @dias do
-        :ok
-      else
+      :ok
+    else
         false -> {:error, :dia_invalido}
-      end
+    end
   end
 
   @doc"""
@@ -80,8 +80,8 @@ defmodule Validacion do
   """
   defp kilometros_permitidos(servicios) do
       if servicio.kilometros >= @kilometros.first and servicio.kilometros <= @kilometros.last do
-        :ok
-      else
+      :ok
+    else
         {:error, :Kilometros_fuera_de_rango}
     end
   end
