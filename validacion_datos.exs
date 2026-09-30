@@ -2,7 +2,7 @@
 # - Ruben Steven Sanchez
 # - Jhonatan Cardona
 # - Diana Valencia
-Code.require_file("datos.exs")
+Code.require_file(Path.expand("datos.exs", __DIR__))
 
 defmodule Validacion do
   @retraso_min -30
@@ -51,6 +51,10 @@ defmodule Validacion do
     #Ejemplo:
 
   """
+  def validar_servicio(servicio, repartidores, zonas) when is_map(servicio) and is_list(repartidores) do
+    validar_servicio(repartidores, zonas, servicio)
+  end
+
   def validar_servicio(repartidores, zonas, servicios) do
     with :ok <- existe_repartidor?(repartidores, servicios),
          :ok <- zona_existe?(servicios, zonas),
@@ -130,11 +134,17 @@ defmodule Validacion do
     - servicios.kilometro: número float de kilometros reccoridos en el servicio
     - @kilometros: número enteros que establece el rango permitido
   """
-  defp kilometros_permitidos(servicios) do
-      if servicio.kilometros >= @kilometros.first and servicio.kilometros <= @kilometros.last do
-        :ok
-      else
-        {:error, :Kilometros_fuera_de_rango}
+  defp kilometros_permitidos(servicio) do
+    case Map.get(servicio, :kilometros) do
+      nil ->
+        {:error, :kilometros_fuera_de_rango}
+
+      kilometros ->
+        if (is_integer(kilometros) or is_float(kilometros)) and kilometros > 0 and kilometros <= @kilometros_max do
+          :ok
+        else
+          {:error, :kilometros_fuera_de_rango}
+        end
     end
   end
 

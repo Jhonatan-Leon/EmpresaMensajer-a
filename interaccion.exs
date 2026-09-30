@@ -1,10 +1,14 @@
+Code.require_file(Path.expand("datos.exs", __DIR__))
+Code.require_file(Path.expand("validacion_datos.exs", __DIR__))
+Code.require_file(Path.expand("servicios.exs", __DIR__))
+Code.require_file(Path.expand("reportes.exs", __DIR__))
+Code.require_file(Path.expand("util2.exs", __DIR__))
 
 defmodule Interaccion do
-
-# Integrantes:
-# - Ruben Steven Sanchez
-# - Jhonatan Cardona
-# - Diana Valenciadefmodule Interaccion do
+  # Integrantes:
+  # - Ruben Steven Sanchez
+  # - Jhonatan Cardona
+  # - Diana Valencia
   @moduledoc """
   Módulo de interacción con el usuario del programa de liquidación semanal.
 
@@ -24,8 +28,6 @@ defmodule Interaccion do
   @mensaje_servicio "Ingrese un servicio adicional\n(repartidor;zona;dia;kilometros;retraso)\no Enter para omitir: "
   @mensaje_codigo "\nIngrese el código del repartidor para ver su comprobante: "
 
-
-
   @doc """
   Punto de entrada del programa.
 
@@ -42,14 +44,13 @@ defmodule Interaccion do
 
     adicionales = solicitar_servicio_adicional(repartidores, zonas)
 
-    {validos, rechazados} =
+    %{aprobados: validos, no_aprobados: rechazados} =
       Validacion.separar_servicios(repartidores, zonas, servicios ++ adicionales)
 
     Reportes.generar_todos(repartidores, zonas, validos, rechazados)
 
     solicitar_comprobante(repartidores, validos)
   end
-
 
   @doc """
   Solicita un servicio adicional, informa al usuario el resultado y retorna
@@ -64,7 +65,6 @@ defmodule Interaccion do
     informar_resultado(resultado)
     servicios_para_agregar(resultado)
   end
-
 
   def interpretar_servicio(entrada) do
     entrada
@@ -139,7 +139,6 @@ defmodule Interaccion do
     Util2.mostrar("Servicio rechazado por la regla de validación: #{motivo}\n", :error)
   end
 
-
   def solicitar_comprobante(repartidores, servicios_validos) do
     @mensaje_codigo
     |> Util2.ingresar(:texto)
@@ -186,7 +185,7 @@ defmodule Interaccion do
   defp formatear_detalle(dias) do
     dias
     |> Util2.convertir_coleccion_mensaje(&formatear_dia/1)
-    |> Enum.reduce("", fn linea, acumulado-> acumulado <> linea end)
+    |> Enum.reduce("", fn linea, acumulado -> acumulado <> linea end)
   end
 
   defp formatear_dia(dia) do
@@ -198,5 +197,3 @@ defmodule Interaccion do
   defp pesos(valor), do: "$" <> :erlang.float_to_binary(valor / 1, decimals: 0)
   defp kilometros(valor), do: Float.round(valor / 1, 2)
 end
-
-Interaccion.main()

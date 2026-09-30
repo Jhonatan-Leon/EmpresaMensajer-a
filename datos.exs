@@ -2,23 +2,43 @@ defmodule Datos do
   def repartidores do
     [
       %{codigo: "M01", nombre: "Ana Torres", bicicleta: true},
-      %{codigo: "M02", nombre: "David López", bicicleta: false}
+      %{codigo: "M02", nombre: "David López", bicicleta: false},
+      %{codigo: "M03", nombre: "Carlos Ruiz", bicicleta: true},
+      %{codigo: "M04", nombre: "Elena Gómez", bicicleta: true}
     ]
   end
 
   def zonas do
     [
       %{id: "Z1", nombre: "Centro", area: 6.5},
-      %{id: "Z2", nombre: "Norte", area: 10.2}
-      # ...
+      %{id: "Z2", nombre: "Norte", area: 10.2},
+      %{id: "Z3", nombre: "Sur", area: 8.0},
+      %{id: "Z4", nombre: "Oeste", area: 5.5}
     ]
   end
 
   def servicios do
     [
       %{repartidor: "M01", zona: "Z1", dia: 1, kilometros: 18, retraso: 3},
-      %{repartidor: "M01", zona: "Z2", dia: 1, kilometros: 25, retraso: 14}
-      # .. .
+      %{repartidor: "M01", zona: "Z2", dia: 1, kilometros: 25, retraso: 14},
+      %{repartidor: "M01", zona: "Z3", dia: 2, kilometros: 40, retraso: -5},
+      %{repartidor: "M01", zona: "Z4", dia: 3, kilometros: 35, retraso: 0},
+      %{repartidor: "M01", zona: "Z1", dia: 4, kilometros: 20, retraso: 5},
+      %{repartidor: "M01", zona: "Z2", dia: 5, kilometros: 15, retraso: -2},
+      %{repartidor: "M01", zona: "Z3", dia: 6, kilometros: 28, retraso: 0},
+      %{repartidor: "M02", zona: "Z1", dia: 1, kilometros: 30, retraso: 0},
+      %{repartidor: "M02", zona: "Z2", dia: 2, kilometros: 42, retraso: 5},
+      %{repartidor: "M02", zona: "Z3", dia: 3, kilometros: 20, retraso: 35},
+      %{repartidor: "M03", zona: "Z1", dia: 1, kilometros: 45, retraso: 0},
+      %{repartidor: "M03", zona: "Z2", dia: 1, kilometros: 40, retraso: -2},
+      %{repartidor: "M03", zona: "Z3", dia: 2, kilometros: 30, retraso: 25},
+      %{repartidor: "M03", zona: "Z4", dia: 3, kilometros: 25, retraso: 10},
+      %{repartidor: "M04", zona: "Z1", dia: 1, kilometros: 10, retraso: 0},
+      %{repartidor: "M04", zona: "Z2", dia: 2, kilometros: 12, retraso: 2},
+      %{repartidor: "M99", zona: "Z1", dia: 1, kilometros: 15, retraso: 0},
+      %{repartidor: "M01", zona: "Z99", dia: 2, kilometros: 10, retraso: 0},
+      %{repartidor: "M02", zona: "Z1", dia: 7, kilometros: 15, retraso: 0},
+      %{repartidor: "M04", zona: "Z1", dia: 1, kilometros: 50, retraso: 0}
     ]
   end
 
@@ -49,3 +69,4 @@ defmodule Datos do
     end)
   end
 end
+
