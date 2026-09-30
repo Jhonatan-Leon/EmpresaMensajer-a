@@ -70,6 +70,30 @@ defmodule Servicios do
     dias_trabajados * @alquiler_bicicleta
   end
 
+  def liquidacion(repartidores, servicios_validos) do
+    # recorremos la lista de repartidores y se les busca sus servicios
+    Enum.map(repartidores, fn repartidor ->
+      servicios_repartidor = servicios_validos |> Enum.filter(fn servicio -> servicio.repartidor == repartidor.codigo end)
+      # se toman todos los parametros para tener en cuenta a la hora de la liquidacion
+      km_totales = Enum.reduce(servicios_repartidor, 0, fn servicio, acc -> acc + servicio.kilometros end)
+      valor_servicios = Enum.reduce(servicios_repartidor, 0, fn servicio, acc -> acc + calcular_valor_servicio(servicio) end)
+      bonificaciones = calcular_bonificacion_repartidor(servicios_repartidor)
+      alquiler = alquiler_bici(repartidor, servicios_repartidor)
+      # se hace la operacion final
+      liquidacion_neta = valor_servicios + bonificaciones - alquiler
+
+      # devolvemos un mapa con la informacion completa
+      %{codigo: repartidor.codigo,
+        nombre: repartidor.nombre,
+        bicicleta: repartidor.bicicleta,
+        km_totales: km_totales,
+        valor_servicios: valor_servicios,
+        bonificaciones: bonificaciones,
+        alquiler: alquiler,
+        liquidacion_neta: liquidacion_neta
+      }
+    end)
+  end
 
   # 3. OBTENER LOS SERVICIOS POST VALIDACION
   # 4. CALCULAR LA PLATA/LIQUIDACION
