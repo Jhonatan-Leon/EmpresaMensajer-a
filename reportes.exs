@@ -3,264 +3,143 @@ defmodule Reportes do
     Modulo encargado de generar los reportes del sistema.
   """
 
-  # 1. REPORTE DE SERVICIOS RECHAZADOS
-  def servicios_rechazados(repartidores, zonas, servicios) do
-    resultado = Validacion.separar_servicios(repartidores, zonas, servicios)
-    resultado.invalidos
-  end
+  # HACER EL GENERAR REPORTES
 
-  # 2. REPORTE DE KM Y DENSIDAD POR ZONA
-  def km_y_densidad_por_zona(zonas, servicios_validos) do
-    Enum.map(zonas, fn zona ->
-      servicios_zona = Enum.filter(servicios_validos, fn s -> s.zona == zona.id end)
-      km_totales = Enum.reduce(servicios_zona, 0, fn s, acc -> acc + s.kilometros end)
-      densidad = if zona.area > 0, do: Float.round(km_totales / zona.area, 2), else: 0.0
+  # servicios rechazados, motivo y cantidad de rechazos por motivo
+  def imprimir_r1(servicios_rechazados) do
+    IO.puts("\n== SERVICIOS RECHAZADOS ==")
 
-      %{
-        zona_id: zona.id,
-        nombre: zona.nombre,
-        area: zona.area,
-        km_totales: km_totales,
-        densidad_km_area: densidad,
-        cantidad_servicios: length(servicios_zona)
-      }
+    # Se recorren los rechazados y por cada uno muestra el mismo servicio y el motivo del rechazo
+    Enum.each(servicios_rechazados, fn rechazado ->
+      IO.puts("Servicio: #{inspect(rechazado.servicio)} | Motivo rechazo: #{rechazado.motivo}")
+    end)
+
+    # Se cuentan la cantidad de rechazos por motivo
+    conteo = Enum.frequencies_by(servicios_rechazados, fn rechazado -> rechazado.motivo end)
+    IO.puts("\nCantidad de rechazos por motivo:")
+
+    # Se recorre el conteo y se muestra la cantidad de rechazos por motivo
+    Enum.each(conteo, fn {motivo, cant} ->
+      IO.puts(" - #{motivo}: #{cant}")
     end)
   end
 
-  # 3. KM POR DIA Y META DE LA EMPRESA (META DIARIA 500 KM)
-  def km_por_dia_y_meta(servicios_validos, meta_diaria \\ 500) do
-    dias = 1..6
+  # Km recorridos y densidad por zona (ordenados de mayor a menor dens)
+  def imprimir_r2(zonas, servicios_validos) do
+    IO.puts("\n== RECORRIDO Y DENSIDAD POR ZONA ==")
 
-    Enum.map(dias, fn dia ->
-      servicios_dia = Enum.filter(servicios_validos, fn s -> s.dia == dia end)
-      km_totales = Enum.reduce(servicios_dia, 0, fn s, acc -> acc + s.kilometros end)
-      cumple_meta = km_totales >= meta_diaria
+    # se recorre la lista de zonas
+    datos_zonas =
+      Enum.map(zonas, fn zona ->
+        # se recorre la lista de servicios y se cuentan los km de los servicios que son de esta zona
+        km =
+          servicios_validos
+          |> Enum.filter(fn servicio -> servicio.zona == zona.id end)
+          # este aca es el que suma los km
+          |> Enum.reduce(0, fn servicio, acc -> acc + servicio.kilometros end)
 
-      %{
-        dia: dia,
-        km_totales: km_totales,
-        meta_diaria: meta_diaria,
-        cumple_meta: cumple_meta,
-        diferencia: km_totales - meta_diaria
-      }
-    end)
-  end
+        # basicamente si se recorrieron km entonces se hace la division, si no no
+        densidad = if zona.area > 0, do: km / zona.area, else: 0.0
 
-  # 4. REPORTE DE LA LIQUIDACION ORDENADA DE MAYOR A MENOR
-  def liquidacion_ordenada(repartidores, servicios_validos) do
-    liquidaciones = Servicios.liquidacion(repartidores, servicios_validos)
-    Enum.sort_by(liquidaciones, fn l -> l.liquidacion_neta end, :desc)
-  end
-
-  # 5. REPORTE DEL MVP CON MAS KILOMETROS (RAPPI MASTER)
-  def mvp_repartidor(repartidores, servicios_validos) do
-    liquidaciones = Servicios.liquidacion(repartidores, servicios_validos)
-    mvp_global = Enum.max_by(liquidaciones, fn l -> l.km_totales end, fn -> nil end)
-
-    servicios_por_rep_dia =
-      servicios_validos
-      |> Enum.group_by(fn s -> {s.repartidor, s.dia} end)
-      |> Enum.map(fn {{rep_code, dia}, servicios} ->
-        km = Enum.reduce(servicios, 0, fn s, acc -> acc + s.kilometros end)
-        rep = Enum.find(repartidores, fn r -> r.codigo == rep_code end)
-        %{repartidor: rep.nombre, codigo: rep_code, dia: dia, kilometros: km}
+        # Se crea un mapa con el nombre de la zona, los km recorridos y la densidad (los datos pedidos vaya)
+        %{zona: zona.nombre, km: km, densidad: densidad}
       end)
+      # lo ordena de manera descendente por densidad
+      |> Enum.sort_by(fn zona -> zona.densidad end, :desc)
 
-    mvp_dia = Enum.max_by(servicios_por_rep_dia, fn r -> r.kilometros end, fn -> nil end)
-
-    %{
-      mvp_global_km: mvp_global,
-      mvp_dia_record: mvp_dia
-    }
-  end
-
-  # 6. REPORTE AL MAS PUNTUAL
-  def mas_puntual(repartidores, servicios_validos) do
-    servicios_por_rep = Enum.group_by(servicios_validos, fn s -> s.repartidor end)
-
-    promedios =
-      Enum.map(repartidores, fn repartidor ->
-        servicios_rep = Map.get(servicios_por_rep, repartidor.codigo, [])
-
-        {retraso_promedio, entregas_a_tiempo} =
-          if Enum.empty?(servicios_rep) do
-            {0.0, 0}
-          else
-            total_retraso = Enum.reduce(servicios_rep, 0, fn s, acc -> acc + s.retraso end)
-            a_tiempo = Enum.count(servicios_rep, fn s -> s.retraso <= 0 end)
-            {Float.round(total_retraso / length(servicios_rep), 2), a_tiempo}
-          end
-
-        %{
-          codigo: repartidor.codigo,
-          nombre: repartidor.nombre,
-          total_servicios: length(servicios_rep),
-          entregas_a_tiempo: entregas_a_tiempo,
-          retraso_promedio_min: retraso_promedio
-        }
-      end)
-
-    repartidores_con_servicios = Enum.filter(promedios, fn p -> p.total_servicios > 0 end)
-
-    mas_puntual =
-      Enum.min_by(repartidores_con_servicios, fn p -> p.retraso_promedio_min end, fn -> nil end)
-
-    %{
-      mas_puntual: mas_puntual,
-      detalle_repartidores: promedios
-    }
-  end
-
-  # 7. REPORTE DE TOTALES GLOBALES
-  def totales_globales(repartidores, zonas, servicios) do
-    clasificacion = Validacion.separar_servicios(repartidores, zonas, servicios)
-    validos = clasificacion.validos
-    invalidos = clasificacion.invalidos
-
-    liquidaciones = Servicios.liquidacion(repartidores, validos)
-
-    km_totales = Enum.reduce(validos, 0, fn s, acc -> acc + s.kilometros end)
-
-    total_servicios_bruto =
-      Enum.reduce(liquidaciones, 0, fn l, acc -> acc + l.valor_servicios end)
-
-    total_bonificaciones = Enum.reduce(liquidaciones, 0, fn l, acc -> acc + l.bonificaciones end)
-    total_alquileres = Enum.reduce(liquidaciones, 0, fn l, acc -> acc + l.alquiler end)
-
-    total_liquidacion_neta =
-      Enum.reduce(liquidaciones, 0, fn l, acc -> acc + l.liquidacion_neta end)
-
-    %{
-      total_servicios_procesados: length(servicios),
-      total_servicios_validos: length(validos),
-      total_servicios_rechazados: length(invalidos),
-      total_km_recorridos: km_totales,
-      total_valor_servicios: total_servicios_bruto,
-      total_bonificaciones: total_bonificaciones,
-      total_alquileres: total_alquileres,
-      total_liquidacion_neta: total_liquidacion_neta
-    }
-  end
-
-  # 8. REPORTE DE LOS REPARTIDORES CON PRESENCIA EN LAS ZONAS
-  def presencia_en_zonas(repartidores, zonas, servicios_validos) do
-    Enum.map(zonas, fn zona ->
-      servicios_zona = Enum.filter(servicios_validos, fn s -> s.zona == zona.id end)
-      codigos_repartidores = servicios_zona |> Enum.map(fn s -> s.repartidor end) |> Enum.uniq()
-
-      repartidores_info =
-        Enum.filter(repartidores, fn r -> r.codigo in codigos_repartidores end)
-        |> Enum.map(fn r -> %{codigo: r.codigo, nombre: r.nombre} end)
-
-      %{
-        zona_id: zona.id,
-        nombre_zona: zona.nombre,
-        total_repartidores: length(repartidores_info),
-        repartidores: repartidores_info
-      }
+    Enum.each(datos_zonas, fn d ->
+      # Se muestra el resultado
+      IO.puts("Zona: #{d.zona} | Km: #{d.km} | Densidad: #{Float.round(d.densidad, 2)} km/km²")
     end)
   end
 
-  # 9. FUNCION QUE GENERE TODOS LOS REPORTES Y MUESTRE POR CONSOLA
-  def generar_todos_los_reportes(repartidores, zonas, servicios) do
-    clasificacion = Validacion.separar_servicios(repartidores, zonas, servicios)
-    validos = clasificacion.validos
+  # Km diarios de la empresa y verificación de la meta de 500 km
+  def imprimir_r3(servicios_validos) do
+    IO.puts("\n== KILÓMETROS DIARIOS DE LA EMPRESA ==")
 
-    IO.puts("\n=======================================================")
-    IO.puts("          EMPRESA DE MENSAJERIA - REPORTES           ")
-    IO.puts("=======================================================\n")
-
-    IO.puts("1. TOTALES GLOBALES:")
-    totales = totales_globales(repartidores, zonas, servicios)
-    IO.inspect(totales)
-
-    IO.puts("\n2. SERVICIOS RECHAZADOS (INVÁLIDOS):")
-    rechazados = servicios_rechazados(repartidores, zonas, servicios)
-
-    Enum.each(rechazados, fn inv ->
-      IO.puts(
-        "   - Repartidor: #{inv.servicio.repartidor} | Zona: #{inv.servicio.zona} | Día: #{inv.servicio.dia} | Motivo: #{inspect(inv.motivo)}"
+    mapa_dias =
+      1..6
+      |> Map.new(fn dia -> {dia, 0} end) # Mapa inicial en 0 para los días del 1 al 6
+      |> Map.merge( # este merge combina 2 mapas, pasa como primer parametro el mapa de arriba y segundo el de abajo
+        servicios_validos
+        |> Enum.group_by( #agrupa los servicios por dia y suma los km
+          fn servicio -> servicio.dia end,
+          fn servicio -> servicio.kilometros end
+        )
+        |> Map.new(fn {dia, kms} -> {dia, Enum.sum(kms)} end) # se crea un nuevo mapa con los dias del 1 al 6 y los km recorridos en ese dia
       )
+
+    alcanzo_todos = Enum.all?(mapa_dias, fn {_d, km} -> km >= 500 end) # verifica que todos los dias se hayan alcanzado los 500 km
+
+    alcanzo_al_menos_uno = Enum.any?(mapa_dias, fn {_d, km} -> km >= 500 end) # verifica que al menos un dia se hayan alcanzado los 500 km
+
+    Enum.each(mapa_dias, fn {dia, km} -> # recorremos el mapa de los dias y se muestra el resultado
+      cumplio = if km >= 500, do: "SI", else: "NO"
+      IO.puts("Día #{dia}: #{km} km | Meta (500 km) alcanzada: #{cumplio}")
     end)
 
-    IO.puts("\n3. LIQUIDACION ORDENADA DE MAYOR A MENOR:")
-    liq_ord = liquidacion_ordenada(repartidores, validos)
+    IO.puts("¿Alcanzó la meta TODOS los días?: #{if alcanzo_todos, do: "SÍ", else: "NO"}")
+    IO.puts("¿Alcanzó la meta AL MENOS UN día?: #{if alcanzo_al_menos_uno, do: "SÍ", else: "NO"}") # ambos complementacion de lo que se muestra
 
-    Enum.each(liq_ord, fn l ->
-      IO.puts(
-        "   - #{l.codigo} #{l.nombre}: Net: $#{l.liquidacion_neta} (Km: #{l.km_totales}, Serv: $#{l.valor_servicios}, Bono: $#{l.bonificaciones}, Alq: -$#{l.alquiler})"
-      )
-    end)
-
-    IO.puts("\n4. RENDIMIENTO Y DENSIDAD POR ZONA:")
-    densidad = km_y_densidad_por_zona(zonas, validos)
-
-    Enum.each(densidad, fn z ->
-      IO.puts(
-        "   - #{z.zona_id} (#{z.nombre}): #{z.km_totales} km | Área: #{z.area} km² | Densidad: #{z.densidad_km_area} km/km²"
-      )
-    end)
-
-    IO.puts("\n5. METAS DIARIAS DE LA EMPRESA:")
-    metas = km_por_dia_y_meta(validos, 500)
-
-    Enum.each(metas, fn m ->
-      estado = if m.cumple_meta, do: "CUMPLIDA", else: "NO CUMPLIDA"
-      IO.puts("   - Día #{m.dia}: #{m.km_totales} km / Meta #{m.meta_diaria} km -> [#{estado}]")
-    end)
-
-    IO.puts("\n6. REPARTIDOR MVP (RAPPI MASTER):")
-    mvp = mvp_repartidor(repartidores, validos)
-
-    if mvp.mvp_global_km do
-      IO.puts(
-        "   - MVP Global: #{mvp.mvp_global_km.nombre} (#{mvp.mvp_global_km.codigo}) con #{mvp.mvp_global_km.km_totales} km totales"
-      )
-    end
-
-    if mvp.mvp_dia_record do
-      IO.puts(
-        "   - Récord en 1 Día: #{mvp.mvp_dia_record.repartidor} con #{mvp.mvp_dia_record.kilometros} km en el Día #{mvp.mvp_dia_record.dia}"
-      )
-    end
-
-    IO.puts("\n7. REPARTIDOR MÁS PUNTUAL:")
-    puntual = mas_puntual(repartidores, validos)
-
-    if puntual.mas_puntual do
-      p = puntual.mas_puntual
-
-      IO.puts(
-        "   - Más Puntual: #{p.nombre} (#{p.codigo}) con retraso promedio de #{p.retraso_promedio_min} min (#{p.entregas_a_tiempo}/#{p.total_servicios} entregas a tiempo)"
-      )
-    end
-
-    IO.puts("\n8. PRESENCIA DE REPARTIDORES POR ZONA:")
-    presencia = presencia_en_zonas(repartidores, zonas, validos)
-
-    Enum.each(presencia, fn z ->
-      nombres = Enum.map(z.repartidores, & &1.nombre) |> Enum.join(", ")
-
-      IO.puts(
-        "   - #{z.zona_id} (#{z.nombre_zona}): #{z.total_repartidores} repartidor(es) [#{nombres}]"
-      )
-    end)
-
-    IO.puts("\n=======================================================\n")
-
-    %{
-      totales_globales: totales,
-      servicios_rechazados: rechazados,
-      liquidacion_ordenada: liq_ord,
-      km_y_densidad_zona: densidad,
-      metas_diarias: metas,
-      mvp: mvp,
-      mas_puntual: puntual,
-      presencia_zonas: presencia
-    }
+    mapa_dias
   end
 
-  def ejecutar do
-    generar_todos_los_reportes(Datos.repartidores(), Datos.zonas(), Datos.servicios())
+  # Liquidación de todos los repartidores ordenada de mayor a menor
+  def imprimir_r4(liquidacion) do
+    IO.puts("\n== LIQUIDACION DE REPARTIDORES ==")
+
+    ordenados = Enum.sort_by(liquidacion, fn repartidor -> repartidor.neto end, :desc)
+
+    ordenados
+    |> Enum.with_index(1) # este convierte la lista en una lista de tuplas {repartidor, indice}
+    |> Enum.each(fn {repartidor, idx} -> # itera sobre la lista de tuplas
+      IO.puts("#{idx}. [#{repartidor.codigo}] #{repartidor.nombre} | Km: #{repartidor.kilometros} | Valor Svcs: $#{repartidor.valor_servicios} | Bonos: $#{repartidor.bonificaciones} | Alquiler: $#{repartidor.alquiler} | NETO: $#{repartidor.neto}")
+    end) # ya con cada iteracion de cada repartidor ordenado se muestra el resultado
   end
+
+  # Repartidor con más km cada dia y el que ocupó el primer lugar en mas dias (el mvp)
+  def imprimir_r5(servicios_validos) do
+  IO.puts("\n== REPARTIDOR CON MAS KM POR DIA ==")
+
+  ganadores_por_dia =
+    Enum.map(1..6, fn dia -> # se crea una lista del 1 al 6 y se itera sobre ella
+      servicios_del_dia = Enum.filter(servicios_validos, fn servicio -> servicio.dia == dia end) # filtra los servicios que son de este dia
+      kilometros_por_repartidor = Enum.group_by(servicios_del_dia, fn servicio -> servicio.repartidor end) # agrupa los servicios por repartidor
+
+      totales =
+        Enum.map(kilometros_por_repartidor, fn {repartidor, servicios} -> # itera sobre los servicios agrupados por repartidor
+          {repartidor, Enum.reduce(servicios, 0, fn servicio, acumulador -> acumulador + servicio.kilometros end)} # suma los km de los servicios de este repartidor
+        end)
+
+      maximo_kilometros =
+        case totales do
+          [] -> 0 # si no hay servicios entonces el maximo es 0
+          _ -> Enum.max(Enum.map(totales, fn {_repartidor, kilometros} -> kilometros end)) # se toma el maximo de los km recorridos por cada repartidor
+        end
+
+      ganadores =
+        if maximo_kilometros > 0 do # si el maximo es mayor a 0 entonces se toma el maximo
+          totales
+          |> Enum.filter(fn {_repartidor, kilometros} -> kilometros == maximo_kilometros end) # filtra los repartidores que tienen el maximo de km
+          |> Enum.map(fn {repartidor, _kilometros} -> repartidor end) # se toma el maximo de los km recorridos por cada repartidor
+        else # si no hay servicios entonces se toma el maximo
+          []
+        end
+
+      IO.puts("Día #{dia}: Ganador(es) #{inspect(ganadores)} con #{maximo_kilometros} km")
+      ganadores
+    end) # ya con cada iteracion de cada repartidor ordenado se muestra el resultado
+
+  conteo_primeros =
+    ganadores_por_dia # se toma la lista de los ganadores por dia
+    |> List.flatten() # se aplana la lista de los ganadores por dia
+    |> Enum.frequencies() # se cuenta la cantidad de veces que cada repartidor aparece en la lista
+
+  if map_size(conteo_primeros) > 0 do # si el tamaño del mapa es mayor a 0 entonces se toma el maximo
+    max_dias = Enum.max(Map.values(conteo_primeros)) # se toma el maximo de los dias recorridos por cada repartidor
+    lideres = Enum.filter(conteo_primeros, fn {_repartidor, conteo} -> conteo == max_dias end) |> Enum.map(&elem(&1, 0)) # filtra los repartidores que tienen el maximo de dias
+    IO.puts("\nRepartidor(es) con más días en 1er lugar: #{inspect(lideres)} (#{max_dias} días)") # muestra el resultado
+  end
+end
+
 end
