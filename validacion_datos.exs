@@ -1,7 +1,42 @@
+# Integrantes:
+# - Ruben Steven Sanchez
+# - Jhonatan Cardona
+# - Diana Valencia
+Code.require_file("datos.exs")
+
 defmodule Validacion do
-  @retraso -30..180
-  @dias 1..6
-  @kilometros 0..45
+  @retraso_min -30
+  @retraso_max 180
+  @dias_min 1
+  @dias_max 6
+  @kilometros_min 0
+  @kilometros_max 45
+
+  def comprobar_servicios(repartidores, zonas, servicios) do
+    servicios_separados = separar_servicios(repartidores, zonas, servicios)
+
+    aprobados = Datos.estructurar_datos(repartidores, zonas, servicios_separados.aprobados)
+
+    {aprobados, servicios_separados.no_aprobados}
+  end
+
+  def separar_servicios(repartidores, zonas, servicios) do
+    nuevo_mapa =
+      Enum.reduce(servicios, %{aprobados: [], no_aprobados: []}, fn servicio, acc ->
+        with {:ok, servicio_valido} <- validar_servicio(repartidores, zonas, servicio) do
+          Map.update!(acc, :aprobados, fn lista -> [servicio_valido | lista] end)
+        else
+          {:error, motivo} ->
+            rechazados = %{servicio: servicio, motivo: motivo}
+            Map.update!(acc, :no_aprobados, fn lista -> [rechazados | lista] end)
+        end
+      end)
+
+    %{
+      aprobados: Enum.reverse(nuevo_mapa.aprobados),
+      no_aprobados: Enum.reverse(nuevo_mapa.no_aprobados)
+    }
+  end
 
   @doc """
     validar_servicios usa la colección de datos y verifica que los datos de cada lista cumpla
@@ -16,17 +51,17 @@ defmodule Validacion do
     #Ejemplo:
 
   """
-  def validar_servicios(repartidores, zonas, servicios) do
-    with  :ok <- existe_repartidor?(repartidores, servicios),
-          :oK <- zona_existe?(servicios, zonas),
-          :ok <- dia_servicio(servicios),
-          :ok <- kilometros_permitidos(servicios),
-          :ok <- retraso_servicio(servicios) do
-      {:ok, servicio}
+  def validar_servicio(repartidores, zonas, servicios) do
+    with :ok <- existe_repartidor?(repartidores, servicios),
+         :ok <- zona_existe?(servicios, zonas),
+         :ok <- dia_servicio(servicios),
+         :ok <- kilometros_permitidos(servicios),
+         :ok <- retraso_servicio(servicios) do
+      {:ok, servicios}
     end
   end
 
-  @doc"""
+  @doc """
   existencia_repartidor comprueba la existencia de un repartidor comparando con la id
   de los servicios
 
@@ -35,24 +70,35 @@ defmodule Validacion do
   - servicios
   """
 
-  defp existe_repartidor?(repartidor, servicios) do
-    if Map.has_key?(repartidor.codigo, servicios.repartidor) do
-      :ok
-    else
-      {:error, :repartidor_desconocido}
+  defp existe_repartidor?(repartidores, servicios) do
+    case Map.get(servicios, :repartidor) do
+      nil ->
+        {:error, :repartidor_desconocido}
+
+      codigo ->
+        if Enum.any?(repartidores, fn repartidor -> repartidor.codigo == codigo end) do
+          :ok
+        else
+          {:error, :repartidor_desconocido}
+        end
     end
   end
 
   defp zona_existe?(servicios, zonas) do
-        if Enum.any?(zonas, fn zona -> zona.id == servicio.zona end) do
-      :ok
-    else
-      {:error, :zona_desconocida}
-    end
+    case Map.get(servicios, :zona) do
+      nil ->
+        {:error, :zona_desconocida}
 
+      id ->
+        if Enum.any?(zonas, fn zona -> zona.id == id end) do
+          :ok
+        else
+          {:error, :zona_desconocida}
+        end
+    end
   end
 
-  @doc"""
+  @doc """
   existencia_repartidor comprueba la existencia de un repartidor comparando con la id
     de los servicios
 
@@ -63,14 +109,20 @@ defmodule Validacion do
   """
 
   defp dia_servicio(servicios) do
-      if servicios.dia in @dias do
-      :ok
-    else
-        false -> {:error, :dia_invalido}
+    case Map.get(servicios, :dia) do
+      nil ->
+        {:error, :dia_invalido}
+
+      dia ->
+        if dia in @dias_min..@dias_max do
+          :ok
+        else
+          {:error, :dia_invalido}
+        end
     end
   end
 
-  @doc"""
+  @doc """
     Kilometros_permitidos comprobar que cumpla los rangos establecidos
 
     parametro:
@@ -80,13 +132,13 @@ defmodule Validacion do
   """
   defp kilometros_permitidos(servicios) do
       if servicio.kilometros >= @kilometros.first and servicio.kilometros <= @kilometros.last do
-      :ok
-    else
+        :ok
+      else
         {:error, :Kilometros_fuera_de_rango}
     end
   end
 
-  @doc"""
+  @doc """
     retraso_servicio comprueba que cumpla con el rango de retraso permitido
 
     parametro:
@@ -96,11 +148,16 @@ defmodule Validacion do
   """
 
   defp retraso_servicio(servicio) do
-    if  servicio.retraso >= @retraso.first and servicio.retraso <= @retraso.last do
-      :ok
-    else
-      {:error, :retraso_invalido}
+    case Map.get(servicio, :retraso) do
+      nil ->
+        {:error, :retraso_invalido}
+
+      retraso ->
+        if retraso >= @retraso_min and retraso <= @retraso_max do
+          :ok
+        else
+          {:error, :retraso_invalido}
+        end
     end
   end
-
 end
