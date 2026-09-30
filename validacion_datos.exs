@@ -44,6 +44,11 @@ defmodule Validacion do
   end
 
   defp zona_existe?(servicios, zonas) do
+        if Enum.any?(zonas, fn zona -> zona.id == servicio.zona end) do
+      :ok
+    else
+      {:error, :zona_desconocida}
+    end
 
   end
 
@@ -52,7 +57,7 @@ defmodule Validacion do
     de los servicios
 
   parametro:
-  - servicio: Colección de datos con los atributos del serevicio
+  - servicio: Colección de datos con los atributos del servicio
   - servicios.dia: número entero con los dia de servicio
   - @dias: número entero con el rango de los días permitidos
   """
@@ -69,12 +74,12 @@ defmodule Validacion do
     Kilometros_permitidos comprobar que cumpla los rangos establecidos
 
     parametro:
-    - servicio: Colección de datos con los atributos del serevicio
+    - servicio: Colección de datos con los atributos del servicio
     - servicios.kilometro: número float de kilometros reccoridos en el servicio
     - @kilometros: número enteros que establece el rango permitido
   """
   defp kilometros_permitidos(servicios) do
-      if servicios.kilometros in @kilometros do
+      if servicio.kilometros >= @kilometros.first and servicio.kilometros <= @kilometros.last do
         :ok
       else
         {:error, :Kilometros_fuera_de_rango}
@@ -85,13 +90,13 @@ defmodule Validacion do
     retraso_servicio comprueba que cumpla con el rango de retraso permitido
 
     parametro:
-    - servicio: Colección de datos con los atributos del serevicio
+    - servicio: Colección de datos con los atributos del servicio
     - servicio.retraso: el número de retraso del servicio
     - @retraso: rango de retraso que tiene permitido el servicio
   """
 
   defp retraso_servicio(servicio) do
-    if servicio.retraso in @retraso do
+    if  servicio.retraso >= @retraso.first and servicio.retraso <= @retraso.last do
       :ok
     else
       {:error, :retraso_invalido}
