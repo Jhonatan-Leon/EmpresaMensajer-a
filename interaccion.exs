@@ -186,7 +186,7 @@ defmodule Interaccion do
   defp formatear_detalle(dias) do
     dias
     |> Util2.convertir_coleccion_mensaje(&formatear_dia/1)
-    |> Enum.reduce("", fn linea acumulado-> acumulado <> linea end)
+    |> Enum.reduce("", fn linea, acumulado-> acumulado <> linea end)
   end
 
   defp formatear_dia(dia) do
