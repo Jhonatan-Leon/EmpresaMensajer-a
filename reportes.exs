@@ -1,3 +1,8 @@
+# Integrantes:
+# - Ruben Steven Sanchez
+# - Jhonatan Cardona
+# - Diana Valencia
+
 defmodule Reportes do
   @moduledoc """
     Modulo encargado de generar los reportes del sistema.

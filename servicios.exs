@@ -1,3 +1,8 @@
+# Integrantes:
+# - Ruben Steven Sanchez
+# - Jhonatan Cardona
+# - Diana Valencia
+
 defmodule Servicios do
   @moduledoc """
     Este modulo contiene funciones puras para calcular valores, aplicar bonos,
