@@ -95,7 +95,4 @@ defmodule Servicios do
     end)
   end
 
-  # 3. OBTENER LOS SERVICIOS POST VALIDACION
-  # 4. CALCULAR LA PLATA/LIQUIDACION
-  # Y YA CREO, TAMPOCO ES MUCHO BTW
 end
