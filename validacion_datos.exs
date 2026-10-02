@@ -191,7 +191,7 @@ defmodule Validacion do
         {:error, :kilometros_fuera_de_rango}
 
       kilometros ->
-        if (is_integer(kilometros) or is_float(kilometros)) and kilometros > 0 and kilometros <= @kilometros_max do
+        if (is_integer(kilometros) or is_float(kilometros)) and kilometros > @kilometros_min and kilometros <= @kilometros_max do
           :ok
         else
           {:error, :kilometros_fuera_de_rango}
