@@ -107,7 +107,7 @@ defmodule Validacion do
 
   """
 
-  defp existe_repartidor?(repartidores, servicios) do
+  def existe_repartidor?(repartidores, servicios) do
     case Map.get(servicios, :repartidor) do
       nil ->
         {:error, :repartidor_desconocido}
@@ -135,7 +135,7 @@ defmodule Validacion do
 
   """
 
-  defp zona_existe?(servicios, zonas) do
+  def zona_existe?(servicios, zonas) do
     case Map.get(servicios, :zona) do
       nil ->
         {:error, :zona_desconocida}
@@ -163,7 +163,7 @@ defmodule Validacion do
 
   """
 
-  defp dia_servicio(servicios) do
+  def dia_servicio(servicios) do
     case Map.get(servicios, :dia) do
       nil ->
         {:error, :dia_invalido}
@@ -185,7 +185,7 @@ defmodule Validacion do
   - servicios.kilometro: número float de kilometros reccoridos en el servicio
   - @kilometros: número enteros que establece el rango permitido
   """
-  defp kilometros_permitidos(servicio) do
+  def kilometros_permitidos(servicio) do
     case Map.get(servicio, :kilometros) do
       nil ->
         {:error, :kilometros_fuera_de_rango}
@@ -213,7 +213,7 @@ defmodule Validacion do
 
   """
 
-  defp retraso_servicio(servicio) do
+  def retraso_servicio(servicio) do
     case Map.get(servicio, :retraso) do
       nil ->
         {:error, :retraso_invalido}
