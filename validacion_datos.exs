@@ -12,6 +12,20 @@ defmodule Validacion do
   @kilometros_min 0
   @kilometros_max 45
 
+  @doc """
+  comprobar_servicios la función se encarga de coordinar la separación de los servicios aprobados y no_aprobados devolvio una tupla
+  de los datos aprobados y no_aprobados estructurados.  Para la manipulación y aplicación de la lógica
+
+  #Parametros:
+  - repartidores: lista de mapas con los atributos de los repartidores
+  - zonas: lista de mapas con los atributos de las zonas
+  - servicios: lista de mapas con los atributos de los servicios
+
+  #Devuelve:
+  - Una tupla con los datos estructurados, separados en servicios aprobados y no_aprobados
+
+  """
+
   def comprobar_servicios(repartidores, zonas, servicios) do
     servicios_separados = separar_servicios(repartidores, zonas, servicios)
 
@@ -19,6 +33,19 @@ defmodule Validacion do
 
     {aprobados, servicios_separados.no_aprobados}
   end
+
+  @doc """
+  separar_servicios donde clasifica los servicios en: aprobados y no_aprobados
+
+  # Parametros:
+  - repartidores: lista de mapas con los atributos de los repartidores
+  - zonas: lista de mapas con los atributos de las zonas
+  - servicios: lista de mapas con los atributos de los servicios
+
+  #Devuelve:
+  - Una tupla con los datos estructurados, separados en servicios aprobados y no_aprobados
+
+  """
 
   def separar_servicios(repartidores, zonas, servicios) do
     nuevo_mapa =
@@ -43,12 +70,13 @@ defmodule Validacion do
     con los requerimientos necesarios para ser un servicios valido.
 
     parametro:
-    - repartidores: Colección de datos una lista de mapas con los atributos del repartidor
-    - zonas: zonas: Colección de datos de una lista de mapas con los registros para el uso
-    - servicios: Colección de datos en una lista de mapas con los atributos de los servicios
-    con el id del repartidor como indice de referencia.
+    - repartidores: llega un mapa con los atributos del repartidor
+    - zonas:zonas: llega un mapa con los atributos de las zonas
+    - servicios: llega un mapa con los atributos de los servicios
 
-    #Ejemplo:
+    #Devuelve:
+    - :ok si los datos son validos
+    - {:error, motivo} si los datos no son validos
 
   """
   def validar_servicio(servicio, repartidores, zonas) when is_map(servicio) and is_list(repartidores) do
@@ -70,8 +98,13 @@ defmodule Validacion do
   de los servicios
 
   parametro:
-  - repartidores
-  - servicios
+  - repartidores: Llega un mapa con los atributos del repartidor
+  - servicios: Llega un mapa con los atributos de los servicios
+
+  #Devuelve:
+  - :ok si los datos son validos
+  - {:error, motivo} si los datos no son validos
+
   """
 
   defp existe_repartidor?(repartidores, servicios) do
@@ -88,6 +121,20 @@ defmodule Validacion do
     end
   end
 
+  @doc """
+  zona_existe comprueba la existencia de una zona comparando con la id
+  de los servicios
+
+  parametro:
+  - servicios: Llega un mapa con los atributos de los servicios
+  - zonas: Llega un mapa con los atributos de las zonas
+
+  #Devuelve:
+  - :ok si los datos son validos
+  - {:error, motivo} si los datos no son validos
+
+  """
+
   defp zona_existe?(servicios, zonas) do
     case Map.get(servicios, :zona) do
       nil ->
@@ -103,13 +150,17 @@ defmodule Validacion do
   end
 
   @doc """
-  existencia_repartidor comprueba la existencia de un repartidor comparando con la id
-    de los servicios
+  dia_servicio comprueba que el dia del servicio sea valido
 
   parametro:
-  - servicio: Colección de datos con los atributos del servicio
+  - servicio: llega un mapa con los atributos del servicio
   - servicios.dia: número entero con los dia de servicio
   - @dias: número entero con el rango de los días permitidos
+
+  #Devuelve:
+  - :ok si los datos son validos
+  - {:error, motivo} si los datos no son validos
+
   """
 
   defp dia_servicio(servicios) do
@@ -127,12 +178,12 @@ defmodule Validacion do
   end
 
   @doc """
-    Kilometros_permitidos comprobar que cumpla los rangos establecidos
+  kilometros_permitidos comprueba que cumpla los rangos establecidos
 
-    parametro:
-    - servicio: Colección de datos con los atributos del servicio
-    - servicios.kilometro: número float de kilometros reccoridos en el servicio
-    - @kilometros: número enteros que establece el rango permitido
+  parametro:
+  - servicio: Colección de datos con los atributos del servicio
+  - servicios.kilometro: número float de kilometros reccoridos en el servicio
+  - @kilometros: número enteros que establece el rango permitido
   """
   defp kilometros_permitidos(servicio) do
     case Map.get(servicio, :kilometros) do
@@ -149,12 +200,17 @@ defmodule Validacion do
   end
 
   @doc """
-    retraso_servicio comprueba que cumpla con el rango de retraso permitido
+  retraso_servicio comprueba que cumpla con el rango de retraso permitido
 
     parametro:
-    - servicio: Colección de datos con los atributos del servicio
+    - servicio: llega un mapa con los atributos del servicio
     - servicio.retraso: el número de retraso del servicio
     - @retraso: rango de retraso que tiene permitido el servicio
+
+    #Devuelve:
+    - :ok si los datos son validos
+    - {:error, motivo} si los datos no son validos
+
   """
 
   defp retraso_servicio(servicio) do
