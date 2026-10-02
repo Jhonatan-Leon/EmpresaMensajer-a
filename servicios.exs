@@ -11,10 +11,6 @@ defmodule Servicios do
 
   # En km
   @tarifa_base 2500
-  @meta_diaria 500
-  @dias_operacion 1..6
-  # km maximos que puede tener un solo servicio
-  @km_max_servicio 45
   # cantidad de km necesarios para la bonificacion diaria
   @bonificacion_km 80
   @bonificacion_diaria 15000
